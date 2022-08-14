@@ -2,7 +2,7 @@ param location string
 param clusterName string
 
 param nodeCount int = 3
-param vmSize string = 'Standard_B2s'
+param vmSize string = 'Standard_B2ms'
 
 resource aks 'Microsoft.ContainerService/managedClusters@2022-06-01' = {
   name: clusterName

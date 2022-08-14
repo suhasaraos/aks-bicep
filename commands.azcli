@@ -1,10 +1,10 @@
 #Create basic AKS cluster
 az deployment sub create --template-file main.bicep --location westus2  --parameters location=westus2
-az aks get-credentials --resource-group aks2-rg --name aks2
+az aks get-credentials --resource-group aks-rg --name aks
 
 #Clean up resources
-# az aks delete --name suaks --resource-group suaks-rg
-# az group delete -n suaks-rg
+# az aks delete --name aks --resource-group aks-rg
+# az group delete -n aks-rg
 
 #Install Istio cli on the client machine
 #https://istio.io/latest/docs/setup/getting-started/#download
