@@ -1,0 +1,51 @@
+#Create basic AKS cluster
+az deployment sub create --template-file main.bicep --location westus2  --parameters location=westus2
+az aks get-credentials --resource-group aks2-rg --name aks2
+
+#Clean up resources
+# az aks delete --name suaks --resource-group suaks-rg
+# az group delete -n suaks-rg
+
+#Install Istio cli on the client machine
+#https://istio.io/latest/docs/setup/getting-started/#download
+
+# Install Istio on the cluster
+istioctl profile list #list available profiles
+istioctl install --set profile=default -y  #install the default profile
+
+#Add a namespace label to instruct Istio to automatically inject Envoy sidecar proxies when you deploy your application later
+kubectl label namespace default istio-injection=enabled
+
+#Get latest istio samples from https://github.com/istio/istio/tree/master/samples/
+
+#Apply add-ons - while not a part of Istio, they are essential to making the most of Istio's observability features.
+#Add-ons: prometheus, grafana, jaegar, kiali
+kubectl apply -f samples/addons
+
+#Launch Kiali as background process
+istioctl dashboard kiali&
+
+#Deploy the Bookinfo sample application:
+kubectl apply -f samples/bookinfo/platform/kube/bookinfo.yaml
+
+#As each pod becomes ready, the Istio sidecar will be deployed along with it.
+kubectl get services
+kubectl get pods
+
+#Install Istio Ingress Gateway to map a path to a route at the edge of your mesh.
+kubectl apply -f samples/bookinfo/networking/bookinfo-gateway.yaml
+
+#Ensure that there are no issues with the configuration:
+istioctl analyze
+
+
+#Get external IP and port
+export INGRESS_HOST=$(kubectl -n istio-system get service istio-ingressgateway -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+export INGRESS_PORT=$(kubectl -n istio-system get service istio-ingressgateway -o jsonpath='{.spec.ports[?(@.name=="http2")].port}')
+export GATEWAY_URL=$INGRESS_HOST:$INGRESS_PORT
+echo "$GATEWAY_URL"
+
+#To see trace data in kiali dash
+for i in $(seq 1 100); do curl -s -o /dev/null "http://$GATEWAY_URL/productpage"; done
+
+
